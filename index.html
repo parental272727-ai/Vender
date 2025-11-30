@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <title>JRVendI - Black System</title>
+    <link rel="manifest" href="manifest.json">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#000000',
+                            surface: '#0a0a0a',
+                            border: '#7f1d1d' // Vermelho escuro para bordas
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Russo+One&display=swap" rel="stylesheet">
+
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent; 
+            overscroll-behavior-y: contain; 
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .font-display {
+            font-family: 'Russo One', sans-serif;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        /* Efeito de Gradiente no Texto Principal */
+        .text-red-shine {
+            background: linear-gradient(to right, #b91c1c, #ef4444, #f87171, #ef4444, #b91c1c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            background-size: 200% auto;
+            animation: shine 4s linear infinite;
+        }
+
+        @keyframes shine { to { background-position: 200% center; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
+        
+        .scanner-feed-container { width: 100%; height: 250px; background-color: #000; border-radius: 1rem; overflow: hidden; margin-bottom: 1rem; position: relative; border: 1px solid #333; }
+        .scanner-feed-container video { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Inputs Adaptáveis (Light/Dark) */
+        .input-elegant { 
+            width: 100%; padding: 0.8rem 1rem; border-radius: 0.75rem; 
+            border: 1px solid;
+            outline: none; transition: all 0.2s; font-size: 1rem;
+        }
+        /* Dark Mode: Fundo preto e bordas vermelhas escuras */
+        .dark .input-elegant {
+            background-color: #0a0a0a; 
+            border-color: #7f1d1d; /* Red 900 */
+            color: #fff;
+        }
+        .dark .input-elegant:focus { border-color: #ef4444; background-color: #000; box-shadow: 0 0 0 1px #ef4444; }
+
+        /* Light Mode */
+        .input-elegant {
+            background-color: #f9fafb;
+            border-color: #e5e7eb;
+            color: #1f2937;
+        }
+        .input-elegant:focus { border-color: #ef4444; background-color: #ffffff; }
+
+        .input-label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.3rem; margin-left: 0.2rem; }
+        .dark .input-label { color: #ef4444; /* Vermelho nos labels */ }
+        .input-label { color: #4b5563; }
+        
+        .product-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 0.5rem; background-color: #262626; }
+        .photo-preview-container { position: relative; width: 100%; height: 160px; border-radius: 0.75rem; overflow: hidden; background-color: #111; border: 2px dashed #404040; display: flex; align-items: center; justify-content: center; margin-top: 0.5rem; }
+        .dark .photo-preview-container { border-color: #7f1d1d; }
+        .photo-preview-container img { width: 100%; height: 100%; object-fit: contain; background-color: #000; }
+        .btn-remove-photo { position: absolute; top: 8px; right: 8px; background-color: #ef4444; color: white; border-radius: 9999px; padding: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.8); z-index: 10; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; }
+        
+        .option-chip { padding: 10px 16px; border: 1px solid; border-radius: 8px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; text-align: center; min-width: 45px; }
+        .dark .option-chip { border-color: #7f1d1d; color: #fca5a5; background: #171717; }
+        .option-chip { border-color: #e5e7eb; color: #4b5563; background: #f3f4f6; }
+
+        .option-chip.selected { background-color: #ef4444; color: white; border-color: #ef4444; }
+        
+        .btn-cart-action { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; border: 1px solid; }
+        .dark .btn-cart-action { background-color: #171717; color: #ef4444; border-color: #7f1d1d; }
+        .btn-cart-action { background-color: #ffffff; color: #1f2937; border-color: #e5e7eb; }
+        .btn-cart-action:active { transform: scale(0.95); }
+
+        .qty-control-group { display: flex; align-items: center; border: 1px solid; border-radius: 0.5rem; overflow: hidden; height: 48px; }
+        .dark .qty-control-group { border-color: #7f1d1d; background: #000; }
+        .qty-control-group { border-color: #e5e7eb; background: #f9fafb; }
+
+        .btn-qty { width: 40px; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; border: none; transition: background 0.2s; }
+        .dark .btn-qty { background: #171717; color: #ef4444; }
+        .btn-qty { background: #e5e7eb; color: #374151; }
+
+        .qty-display { width: 50px; text-align: center; font-weight: bold; border-left: 1px solid; border-right: 1px solid; font-size: 1.1rem; }
+        .dark .qty-display { border-color: #7f1d1d; color: white; }
+        .qty-display { border-color: #e5e7eb; color: #111; }
+        
+        .qty-control-sm { height: 32px; border-radius: 6px; display: inline-flex; }
+        .qty-control-sm .btn-qty { width: 28px; font-size: 1rem; }
+        .qty-control-sm .qty-display { width: 34px; font-size: 0.9rem; line-height: 32px; }
+
+        #sidebar { transition: transform 0.3s ease-in-out; }
+        .sidebar-link { display: flex; items-center; gap: 12px; width: 100%; padding: 14px; border-radius: 12px; transition: all 0.2s; text-align: left; font-weight: 500; }
+        .dark .sidebar-link { color: #fca5a5; }
+        .sidebar-link { color: #6b7280; }
+        .dark .sidebar-link:hover { background-color: #7f1d1d; color: #fff; }
+        .sidebar-link:hover { background-color: #f3f4f6; color: #000; }
+        
+        .stat-card { padding: 1rem; border-radius: 1rem; border: 1px solid; text-align: center; }
+        .dark .stat-card { background: #0a0a0a; border-color: #7f1d1d; }
+        .stat-card { background: #fff; border-color: #e5e7eb; }
+
+        .stat-label { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.3rem; letter-spacing: 0.05em; }
+        .dark .stat-label { color: #ef4444; }
+        .stat-label { color: #6b7280; }
+
+        .stat-value { font-size: 1.2rem; font-weight: 700; }
+        .dark .stat-value { color: #fff; }
+        .stat-value { color: #111; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-gray-100 text-gray-900 dark:bg-black dark:text-gray-100 transition-colors duration-300">
+
+    <div id="online-status" class="fixed top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full text-xs font-bold bg-green-600 text-white shadow-lg opacity-0 transition pointer-events-none z-50">Sistema Pronto</div>
+
+    <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/50 dark:bg-black/90 z-[60] backdrop-blur-sm" onclick="toggleSidebar()"></div>
+
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-72 bg-white dark:bg-black shadow-2xl transform -translate-x-full z-[70] flex flex-col border-r border-gray-200 dark:border-red-900">
+        <div class="p-6 border-b border-gray-200 dark:border-red-900 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-red-500 flex items-center gap-2"><i class="ph ph-list"></i> Menu</h2>
+            <button onclick="toggleSidebar()" class="text-neutral-500 hover:text-black dark:text-red-500 dark:hover:text-white"><i class="ph ph-x text-xl"></i></button>
+        </div>
+        <nav class="p-4 space-y-1 flex-grow">
+            <button class="sidebar-link" onclick="openModal('suppliers-list-modal'); renderSupplierList(); toggleSidebar()">
+                <i class="ph ph-truck"></i> <span>Fornecedores</span>
+            </button>
+            <button class="sidebar-link" onclick="openModal('suppliers-list-modal'); renderSupplierList('', true); toggleSidebar()">
+                <i class="ph ph-star"></i> <span>Favoritos</span>
+            </button>
+            <button class="sidebar-link" onclick="openModal('sales-history-modal'); renderSalesHistory(); toggleSidebar()">
+                <i class="ph ph-receipt"></i> <span>Histórico Financeiro</span>
+            </button>
+            <button class="sidebar-link" onclick="openModal('price-comparison-modal'); toggleSidebar()">
+                <i class="ph ph-scales"></i> <span>Comparador de Preços</span>
+            </button>
+            <hr class="border-gray-200 dark:border-red-900 my-4">
+            <button class="sidebar-link" onclick="toggleSidebar(); openModal('backup-modal')">
+                <i class="ph ph-floppy-disk"></i> <span>Backup / Restaurar</span>
+            </button>
+            <button class="sidebar-link" onclick="toggleSidebar(); openModal('settings-modal')">
+                <i class="ph ph-gear"></i> <span>Configurações</span>
+            </button>
+        </nav>
+        <div class="p-4 border-t border-gray-200 dark:border-red-900 text-center">
+            <p class="text-xs text-neutral-500 dark:text-red-800">Versão Black 12.1</p>
+        </div>
+    </aside>
+
+    <header class="bg-white/90 dark:bg-black/90 backdrop-blur-md text-gray-900 dark:text-white p-4 sticky top-0 z-40 border-b border-gray-200 dark:border-red-900 transition-colors duration-300">
+        <div class="max-w-3xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-red-900/30 dark:text-red-500 transition">
+                    <i class="ph ph-list text-2xl"></i>
+                </button>
+                <h1 class="text-3xl font-display text-red-shine">
+                    JR VEND<span class="cut-letter" style="color:#dc2626">I</span>
+                </h1>
+            </div>
+            <button onclick="openModal('settings-modal')" class="h-10 w-10 bg-gray-100 dark:bg-black rounded-full flex items-center justify-center border border-gray-300 dark:border-red-600 hover:border-red-500 transition shadow-sm overflow-hidden">
+                <i id="header-user-icon" class="ph ph-user text-gray-500 dark:text-red-500 text-xl"></i>
+            </button>
+        </div>
+    </header>
+
+    <main id="app-container" class="flex-grow p-4 max-w-3xl mx-auto w-full space-y-5 select-none">
+        
+        <div id="loading-state" class="flex flex-col items-center justify-center h-64 animate-pulse">
+            <div class="h-12 w-12 border-4 border-gray-300 dark:border-red-900 border-t-red-600 rounded-full animate-spin"></div>
+            <p class="mt-4 text-neutral-500 font-medium">Carregando...</p>
+        </div>
+
+        <div id="main-content" class="hidden animate-slide-up space-y-5">
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button id="btn-open-sell-modal" class="btn-active col-span-2 bg-white dark:bg-neutral-900 hover:bg-gray-50 dark:hover:bg-neutral-800 text-gray-900 dark:text-white p-6 rounded-2xl shadow-lg dark:shadow-red-900/20 flex items-center justify-between group border border-gray-200 dark:border-red-900 transition-all active:scale-[0.98]">
+                    <div class="text-left">
+                        <i class="ph ph-currency-circle-dollar text-3xl mb-1 block text-gray-400 dark:text-red-500 group-hover:text-red-500 dark:group-hover:text-white transition"></i>
+                        <span class="font-bold text-lg">Nova Venda</span>
+                    </div>
+                    <i class="ph ph-caret-right text-2xl text-gray-400 dark:text-red-800 group-hover:text-red-500 dark:group-hover:text-white transition"></i>
+                </button>
+                
+                <button id="btn-open-stock-list" class="bg-white dark:bg-black p-4 rounded-2xl border border-gray-200 dark:border-red-900 flex flex-col items-center justify-center text-center gap-2 hover:bg-gray-50 dark:hover:bg-neutral-900 transition shadow-sm">
+                    <div class="h-12 w-12 bg-gray-100 dark:bg-neutral-900 text-gray-500 dark:text-red-500 rounded-full flex items-center justify-center text-2xl border border-gray-200 dark:border-red-800">
+                        <i class="ph ph-package"></i>
+                    </div>
+                    <span class="font-semibold text-sm text-gray-500 dark:text-neutral-400">Estoque</span>
+                </button>
+                
+                <button id="btn-add-product" class="bg-white dark:bg-black p-4 rounded-2xl border border-gray-200 dark:border-red-900 flex flex-col items-center justify-center text-center gap-2 hover:bg-gray-50 dark:hover:bg-neutral-900 transition shadow-sm">
+                    <div class="h-12 w-12 bg-gray-100 dark:bg-neutral-900 text-gray-500 dark:text-red-500 rounded-full flex items-center justify-center text-2xl border border-gray-200 dark:border-red-800">
+                        <i class="ph ph-plus-circle"></i>
+                    </div>
+                    <span class="font-semibold text-sm text-gray-500 dark:text-neutral-400">Novo Produto</span>
+                </button>
+            </div>
+
+            <div id="section-low-stock" class="hidden bg-red-50 dark:bg-red-950/20 p-4 rounded-2xl border border-red-200 dark:border-red-900">
+                <h2 class="text-sm font-bold text-red-500 flex items-center mb-2 gap-2"><i class="ph ph-warning-circle"></i> Estoque Baixo (<span id="low-stock-count">0</span>)</h2>
+                <div id="low-stock-list" class="space-y-2"></div>
+            </div>
+
+            <div class="bg-white dark:bg-black p-5 rounded-2xl border border-gray-200 dark:border-red-900 shadow-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-tag dark:text-red-500"></i> Catálogo</h2>
+                    <span class="text-xs bg-gray-100 dark:bg-neutral-900 text-gray-500 dark:text-red-400 px-2 py-1 rounded-md font-mono border border-gray-200 dark:border-red-900" id="catalog-count">0</span>
+                </div>
+                <div class="flex gap-2 mb-4 relative">
+                    <div class="relative flex-grow">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500 dark:text-red-700"><i class="ph ph-magnifying-glass text-lg"></i></div>
+                        <input type="text" id="catalog-search-input" placeholder="Buscar produto..." class="input-elegant pl-10">
+                    </div>
+                    <button id="btn-scan-catalog" class="bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-red-500 px-4 rounded-xl border border-gray-200 dark:border-red-900 hover:bg-gray-200 dark:hover:bg-neutral-800 transition flex items-center justify-center">
+                         <i class="ph ph-qr-code text-xl"></i>
+                    </button>
+                </div>
+                <div id="scanner-area-catalog" class="hidden scanner-feed-container mb-4 dark:border-red-900"><video id="catalog-scanner-feed"></video><button onclick="stopScanner();document.getElementById('scanner-area-catalog').classList.add('hidden')" class="absolute top-2 right-2 bg-black/50 text-white rounded-full p-2"><i class="ph ph-x"></i></button></div>
+                <div id="product-catalog-list" class="space-y-3 max-h-[50vh] overflow-y-auto pr-1"></div>
+            </div>
+            
+        </div>
+    </main>
+
+    <footer class="w-full bg-white dark:bg-black border-t border-gray-200 dark:border-red-900 p-8 text-center mt-auto z-10 transition-colors duration-300">
+        <p class="text-neutral-500 dark:text-red-800 text-[0.65rem] font-bold tracking-widest uppercase mb-4">Desenvolvido por Junior Rocha</p>
+        <a href="https://wa.me/5562982368265" target="_blank" class="inline-flex items-center gap-2 bg-gray-100 dark:bg-neutral-900 hover:bg-gray-200 dark:hover:bg-neutral-800 border border-gray-300 dark:border-red-800 text-gray-900 dark:text-white px-5 py-3 rounded-full text-sm font-bold transition">
+            <i class="ph ph-whatsapp-logo text-xl"></i> Fale Comigo
+        </a>
+    </footer>
+
+    <div id="settings-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/90 backdrop-blur-sm p-4" onclick="closeModal('settings-modal')">
+        <div class="bg-white dark:bg-black w-full max-w-sm rounded-2xl p-6 animate-slide-up border border-gray-200 dark:border-red-900" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-200 dark:border-red-900 pb-4">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white">Configurações</h3>
+                <button onclick="closeModal('settings-modal')" class="text-neutral-500 hover:text-black dark:text-red-500 dark:hover:text-white"><i class="ph ph-x text-xl"></i></button>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-gray-500 dark:text-red-500 uppercase mb-3">Aparência</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="setTheme('light')" class="flex items-center justify-center gap-2 p-3 rounded-xl border border-gray-200 dark:border-red-900 bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-white hover:border-red-500 transition">
+                        <i class="ph ph-sun text-xl"></i> Claro
+                    </button>
+                    <button onclick="setTheme('dark')" class="flex items-center justify-center gap-2 p-3 rounded-xl border border-gray-200 dark:border-red-900 bg-gray-50 dark:bg-neutral-900 text-gray-900 dark:text-white hover:border-red-500 transition">
+                        <i class="ph ph-moon text-xl text-red-500"></i> Escuro
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-500 dark:text-red-500 uppercase mb-3">Ícone do Perfil</label>
+                <div class="grid grid-cols-4 gap-3">
+                    <button onclick="setUserIcon('ph-user')" class="p-3 rounded-xl bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-red-900 hover:bg-red-500 hover:text-white dark:text-red-500 dark:hover:text-white transition flex items-center justify-center"><i class="ph ph-user text-2xl"></i></button>
+                    <button onclick="setUserIcon('ph-robot')" class="p-3 rounded-xl bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-red-900 hover:bg-red-500 hover:text-white dark:text-red-500 dark:hover:text-white transition flex items-center justify-center"><i class="ph ph-robot text-2xl"></i></button>
+                    <button onclick="setUserIcon('ph-storefront')" class="p-3 rounded-xl bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-red-900 hover:bg-red-500 hover:text-white dark:text-red-500 dark:hover:text-white transition flex items-center justify-center"><i class="ph ph-storefront text-2xl"></i></button>
+                    <button onclick="setUserIcon('ph-crown')" class="p-3 rounded-xl bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-red-900 hover:bg-red-500 hover:text-white dark:text-red-500 dark:hover:text-white transition flex items-center justify-center"><i class="ph ph-crown text-2xl"></i></button>
+                    <button onclick="setUserIcon('ph-skull')" class="p-3 rounded-xl bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-red-900 hover:bg-red-500 hover:text-white dark:text-red-500 dark:hover:text-white transition flex items-center justify-center"><i class="ph ph-skull text-2xl"></i></button>
+                    <button onclick="setUserIcon('ph-rocket')" class="p-3 rounded-xl bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-red-900 hover:bg-red-500 hover:text-white dark:text-red-500 dark:hover:text-white transition flex items-center justify-center"><i class="ph ph-rocket text-2xl"></i></button>
+                    <button onclick="setUserIcon('ph-heart')" class="p-3 rounded-xl bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-red-900 hover:bg-red-500 hover:text-white dark:text-red-500 dark:hover:text-white transition flex items-center justify-center"><i class="ph ph-heart text-2xl"></i></button>
+                    <button onclick="setUserIcon('ph-smiley')" class="p-3 rounded-xl bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-red-900 hover:bg-red-500 hover:text-white dark:text-red-500 dark:hover:text-white transition flex items-center justify-center"><i class="ph ph-smiley text-2xl"></i></button>
+                </div>
+            </div>
+            
+            <div class="mt-6 text-center text-xs text-gray-400">
+                <p>As preferências são salvas neste dispositivo.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="suppliers-list-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/90 backdrop-blur-sm p-4" onclick="closeModal('suppliers-list-modal')">
+        <div class="bg-white dark:bg-black w-full max-w-md h-[85vh] rounded-2xl p-6 animate-slide-up flex flex-col border border-gray-200 dark:border-red-900" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-red-900 pb-4">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white" id="suppliers-modal-title">Fornecedores</h3>
+                <button onclick="closeModal('suppliers-list-modal')" class="text-neutral-500 hover:text-black dark:text-red-500 dark:hover:text-white bg-gray-100 dark:bg-neutral-900 rounded-full p-2 transition"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <div class="mb-4 flex gap-2">
+                <div class="relative flex-grow">
+                    <i class="ph ph-magnifying-glass absolute left-3 top-3 text-gray-400 dark:text-red-500"></i>
+                    <input type="text" id="supplier-search-input" placeholder="Buscar..." class="input-elegant pl-10">
+                </div>
+            </div>
+            <div id="suppliers-list-container" class="flex-grow overflow-y-auto space-y-3 pr-1"></div>
+            <button onclick="openSupplierEditModal()" class="mt-4 w-full py-4 bg-black dark:bg-white text-white dark:text-black font-bold rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-200 transition flex items-center justify-center gap-2">
+                <i class="ph ph-plus-circle text-lg"></i> Novo Fornecedor
+            </button>
+        </div>
+    </div>
+
+    <div id="sales-history-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/90 backdrop-blur-sm p-4" onclick="closeModal('sales-history-modal')">
+        <div class="bg-white dark:bg-black w-full max-w-md h-[90vh] rounded-2xl p-6 animate-slide-up flex flex-col border border-gray-200 dark:border-red-900" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-red-900 pb-2">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-chart-line-up text-neutral-400 dark:text-red-500"></i> Histórico</h3>
+                <button onclick="closeModal('sales-history-modal')" class="text-neutral-500 hover:text-black dark:text-red-500 dark:hover:text-white bg-gray-100 dark:bg-neutral-900 rounded-full p-2"><i class="ph ph-x"></i></button>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <div class="stat-card">
+                    <div class="stat-label">Hoje</div>
+                    <div class="stat-value text-emerald-500" id="dash-today">R$ 0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Semana</div>
+                    <div class="stat-value text-blue-500" id="dash-week">R$ 0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Mês</div>
+                    <div class="stat-value text-purple-500" id="dash-month">R$ 0</div>
+                </div>
+            </div>
+
+            <div id="sales-history-list" class="flex-grow overflow-y-auto space-y-3 pr-1 bg-gray-50 dark:bg-neutral-900/30 rounded-xl p-1">
+                <p class="text-center text-neutral-500 mt-10">Carregando vendas...</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="manage-supplier-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/90 backdrop-blur-sm p-4" onclick="closeModal('manage-supplier-modal')">
+        <div class="bg-white dark:bg-black w-full max-w-md h-[85vh] rounded-2xl p-6 animate-slide-up border border-gray-200 dark:border-red-900 flex flex-col" onclick="event.stopPropagation()">
+            <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white border-b border-gray-200 dark:border-red-900 pb-2" id="supplier-modal-title-edit">Novo Fornecedor</h3>
+            
+            <form id="manage-supplier-form" class="space-y-4 flex-grow overflow-y-auto pr-1">
+                <input type="hidden" id="supplier-id">
+                <div><label class="input-label">Nome</label><input type="text" id="supplier-name" required class="input-elegant"></div>
+                <div><label class="input-label text-green-500 flex items-center gap-1"><i class="ph ph-whatsapp-logo"></i> WhatsApp</label><input type="number" id="supplier-whatsapp" class="input-elegant"></div>
+                
+                <div class="bg-gray-100 dark:bg-neutral-900 p-4 rounded-xl border border-gray-200 dark:border-red-900">
+                    <h4 class="text-xs font-bold text-neutral-500 dark:text-red-500 uppercase mb-3">Catálogo</h4>
+                    <div class="flex flex-col gap-2 mb-3">
+                        <input type="text" id="supp-prod-name" placeholder="Produto" class="input-elegant">
+                        <div class="flex gap-2">
+                            <input type="number" id="supp-prod-price" placeholder="R$" step="0.01" class="input-elegant flex-1">
+                            <button type="button" onclick="addTempSupplierProduct()" class="bg-black dark:bg-white text-white dark:text-black px-4 rounded-lg font-bold hover:bg-neutral-800 dark:hover:bg-gray-200"><i class="ph ph-plus"></i></button>
+                        </div>
+                    </div>
+                    <div id="supplier-products-list" class="space-y-2 max-h-40 overflow-y-auto bg-white dark:bg-black p-2 rounded-lg border border-gray-200 dark:border-red-900"></div>
+                </div>
+            </form>
+            
+            <div class="flex flex-col gap-3 pt-4 border-t border-gray-200 dark:border-red-900 mt-2">
+                <button onclick="submitSupplierForm()" class="w-full py-3 bg-black dark:bg-white text-white dark:text-black font-bold rounded-xl shadow hover:bg-neutral-800 dark:hover:bg-gray-200">Salvar</button>
+                <button type="button" onclick="closeModal('manage-supplier-modal')" class="text-neutral-500 text-xs font-bold uppercase mt-2 hover:text-black dark:hover:text-white text-center">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="price-comparison-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/90 backdrop-blur-sm p-4" onclick="closeModal('price-comparison-modal')">
+        <div class="bg-white dark:bg-black w-full max-w-md h-[85vh] rounded-2xl p-6 animate-slide-up flex flex-col border border-gray-200 dark:border-red-900" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-red-900 pb-2">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-scales dark:text-red-500"></i> Comparador</h3>
+                <button onclick="closeModal('price-comparison-modal')" class="text-neutral-500 hover:text-black dark:text-red-500 dark:hover:text-white bg-gray-100 dark:bg-neutral-900 rounded-full p-2"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="mb-4">
+                <input type="text" id="comparison-search-input" placeholder="O que deseja comprar?" class="input-elegant text-center text-lg font-bold">
+            </div>
+            <div id="comparison-results-list" class="flex-grow overflow-y-auto space-y-3 pr-1"></div>
+        </div>
+    </div>
+
+    <div id="stock-list-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/90 backdrop-blur-sm p-4" onclick="closeModal('stock-list-modal')">
+        <div class="bg-white dark:bg-black w-full max-w-md h-[85vh] rounded-2xl p-6 animate-slide-up flex flex-col border border-gray-200 dark:border-red-900" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-red-900 pb-2">
+                <h3 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-package dark:text-red-500"></i> Estoque</h3>
+                <button onclick="closeModal('stock-list-modal')" class="text-neutral-500 hover:text-black dark:text-red-500 dark:hover:text-white bg-gray-100 dark:bg-neutral-900 rounded-full p-2"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="mb-4"><input type="text" id="stock-search-input" placeholder="Filtrar..." class="input-elegant"></div>
+            <div id="stock-management-list" class="flex-grow overflow-y-auto space-y-3 pr-1"></div>
+        </div>
+    </div>
+
+    <div id="product-options-modal" class="hidden fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/50 dark:bg-black/90 backdrop-blur-sm" onclick="closeModal('product-options-modal')">
+        <div class="bg-white dark:bg-black w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-6 animate-slide-up border border-gray-200 dark:border-red-900" onclick="event.stopPropagation()">
+            <div class="flex items-center gap-4 mb-6">
+                <img id="opt-product-img" class="h-16 w-16 bg-gray-100 dark:bg-neutral-900 rounded-lg object-cover border border-gray-200 dark:border-red-900">
+                <div>
+                    <h3 class="font-bold text-lg text-gray-900 dark:text-white leading-tight" id="opt-product-name">Produto</h3>
+                    <p class="text-sm text-neutral-500" id="opt-product-code">00000</p>
+                    <p class="text-xs font-bold text-neutral-500 dark:text-red-400 mt-1">Estoque: <span id="opt-product-stock">0</span></p>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <button id="btn-opt-restock" class="w-full py-3 bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white font-bold rounded-xl border border-gray-200 dark:border-red-900 hover:bg-gray-200 dark:hover:bg-neutral-800 flex items-center justify-center gap-2"><i class="ph ph-package-plus text-xl"></i> Repor Estoque</button>
+                <button id="btn-opt-edit" class="w-full py-3 bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white font-bold rounded-xl border border-gray-200 dark:border-red-900 hover:bg-gray-200 dark:hover:bg-neutral-800 flex items-center justify-center gap-2"><i class="ph ph-pencil-simple text-xl"></i> Editar Dados</button>
+                <button id="btn-opt-delete" class="w-full py-3 bg-red-50 dark:bg-red-950/30 text-red-500 font-bold rounded-xl border border-red-100 dark:border-red-900 hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center justify-center gap-2"><i class="ph ph-trash text-xl"></i> Excluir Produto</button>
+                <button onclick="closeModal('product-options-modal')" class="w-full py-3 text-neutral-500 font-bold hover:text-black dark:hover:text-white">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="restock-input-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/50 dark:bg-black/90 backdrop-blur-sm p-4" onclick="closeModal('restock-input-modal')">
+        <div class="bg-white dark:bg-black w-full max-w-xs rounded-2xl p-6 animate-slide-up border border-gray-200 dark:border-red-900" onclick="event.stopPropagation()">
+            <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-2">Adicionar Estoque</h3>
+            <input type="number" id="quick-restock-qty" class="input-elegant text-center text-lg font-bold mb-4" placeholder="0" autofocus>
+            <div class="flex gap-2"><button onclick="closeModal('restock-input-modal')" class="flex-1 py-2 text-neutral-500 hover:text-black dark:hover:text-white">Cancelar</button><button id="btn-confirm-quick-restock" class="flex-1 py-2 bg-black dark:bg-white text-white dark:text-black font-bold rounded-lg shadow">Confirmar</button></div>
+        </div>
+    </div>
+
+    <div id="add-product-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/90 backdrop-blur-sm p-4" onclick="closeModal('add-product-modal')">
+        <div class="bg-white dark:bg-black w-full max-w-md rounded-2xl p-6 animate-slide-up max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-red-900" onclick="event.stopPropagation()">
+            <h3 class="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-plus-circle"></i> Novo Produto</h3>
+            <button id="btn-open-scanner-new-product" class="w-full py-4 mb-4 bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white font-semibold rounded-xl hover:bg-gray-200 dark:hover:bg-neutral-800 transition flex items-center justify-center gap-2 border border-gray-200 dark:border-red-900">
+                <i class="ph ph-qr-code text-xl"></i> Ler Código de Barras
+            </button>
+            <div id="scanner-area-new-product" class="hidden scanner-feed-container rounded-xl overflow-hidden mb-4 dark:border-red-900"><video id="new-product-scanner-feed"></video></div>
+            <form id="add-product-form" class="space-y-4">
+                <div><label class="input-label">Código</label><input type="text" id="new-barcode" placeholder="EAN ou ID" required class="input-elegant font-mono"></div>
+                <div><label class="input-label">Nome</label><input type="text" id="new-name" required class="input-elegant"></div>
+                <div class="flex gap-3"><div class="flex-1"><label class="input-label">Cor</label><input type="text" id="new-color" class="input-elegant"></div><div class="flex-1"><label class="input-label">Tamanho</label><input type="text" id="new-size" class="input-elegant text-center"></div></div>
+                <div class="bg-gray-100 dark:bg-neutral-900 p-3 rounded-xl border border-gray-200 dark:border-red-900 space-y-3">
+                    <div class="flex gap-3"><div class="flex-1"><label class="input-label text-neutral-400">Custo</label><input type="number" id="new-cost" step="0.01" class="input-elegant" oninput="calculatePrice('new')"></div><div class="flex-1"><label class="input-label text-neutral-400">Lucro %</label><input type="number" id="new-margin" step="1" class="input-elegant" oninput="calculatePrice('new')"></div></div>
+                    <div><label class="input-label text-gray-900 dark:text-white">Preço Venda</label><input type="number" id="new-price" step="0.01" required class="input-elegant font-bold text-lg text-gray-900 dark:text-white border-neutral-600"></div>
+                </div>
+                <div class="flex gap-3"><div class="flex-1"><label class="input-label">Estoque</label><input type="number" id="new-stock" required min="0" class="input-elegant"></div><div class="flex-1"><label class="input-label">Mínimo</label><input type="number" id="new-min-stock" required min="1" class="input-elegant"></div></div>
+                <div class="bg-white dark:bg-black p-2 rounded-xl border border-gray-200 dark:border-red-900 mt-2"><label class="block w-full text-center py-3 bg-gray-100 dark:bg-neutral-900 text-neutral-500 dark:text-red-400 rounded-lg text-xs font-bold cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition border border-gray-200 dark:border-red-900 flex justify-center items-center gap-2"><i class="ph ph-camera"></i> Foto <input type="file" id="new-product-photo" accept="image/*" class="hidden"></label><div id="new-photo-preview-container" class="photo-preview-container hidden"><img id="new-photo-img" src="" alt="Preview"><button type="button" class="btn-remove-photo" onclick="removePhoto('new')"><i class="ph ph-x"></i></button></div></div>
+                <div class="flex justify-end gap-3 pt-2"><button type="button" onclick="closeModal('add-product-modal')" class="px-4 py-2 text-neutral-500 font-semibold text-sm hover:text-black dark:hover:text-white">Cancelar</button><button type="submit" class="px-6 py-2 bg-black dark:bg-white text-white dark:text-black font-bold rounded-xl shadow text-sm hover:bg-neutral-800 dark:hover:bg-gray-200 flex items-center gap-2">Salvar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="manage-product-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/90 backdrop-blur-sm p-4" onclick="closeModal('manage-product-modal')">
+        <div class="bg-white dark:bg-black w-full max-w-md rounded-2xl p-6 animate-slide-up max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-red-900" onclick="event.stopPropagation()">
+            <h3 class="text-lg font-bold mb-4 text-gray-900 dark:text-white border-b border-gray-200 dark:border-red-900 pb-2">Editar Produto</h3>
+            <form id="manage-product-form" class="space-y-3">
+                <div><label class="input-label">Código</label><input type="text" id="manage-barcode" readonly class="w-full bg-gray-100 dark:bg-neutral-900 rounded border border-gray-200 dark:border-red-900 px-3 py-2 font-mono text-sm text-neutral-500 dark:text-red-400 outline-none"></div>
+                <div><label class="input-label">Nome</label><input type="text" id="manage-name" required class="input-elegant"></div>
+                <div class="flex gap-3"><div class="flex-1"><label class="input-label">Cor</label><input type="text" id="manage-color" class="input-elegant"></div><div class="flex-1"><label class="input-label">Tamanho</label><input type="text" id="manage-size" class="input-elegant text-center"></div></div>
+                <div class="bg-gray-100 dark:bg-neutral-900 p-3 rounded-xl border border-gray-200 dark:border-red-900 space-y-3">
+                    <div class="flex gap-3"><div class="flex-1"><label class="input-label">Custo</label><input type="number" id="manage-cost" step="0.01" class="input-elegant" oninput="calculatePrice('manage')"></div><div class="flex-1"><label class="input-label">Lucro %</label><input type="number" id="manage-margin" step="1" class="input-elegant" oninput="calculatePrice('manage')"></div></div>
+                    <div><label class="input-label text-gray-900 dark:text-white">Preço Venda</label><input type="number" id="manage-price" step="0.01" required class="input-elegant font-bold text-gray-900 dark:text-white"></div>
+                </div>
+                <div class="flex gap-3"><div class="flex-1"><label class="input-label">Estoque</label><input type="number" id="manage-stock" required min="0" class="input-elegant"></div><div class="flex-1"><label class="input-label">Mínimo</label><input type="number" id="manage-min-stock" required min="1" class="input-elegant"></div></div>
+                <div class="bg-white dark:bg-black p-2 rounded-xl border border-gray-200 dark:border-red-900 mt-2"><label class="block w-full text-center py-3 bg-gray-100 dark:bg-neutral-900 text-neutral-500 dark:text-red-400 rounded-lg text-xs font-bold cursor-pointer hover:bg-gray-200 dark:hover:bg-neutral-800 transition flex justify-center items-center gap-2"><i class="ph ph-camera"></i> Foto <input type="file" id="manage-product-photo" accept="image/*" class="hidden"></label><div id="manage-photo-preview-container" class="photo-preview-container hidden"><img id="manage-photo-img" src="" alt="Preview"><button type="button" class="btn-remove-photo" onclick="removePhoto('manage')"><i class="ph ph-x"></i></button></div></div>
+                <div class="flex flex-col gap-3 pt-4"><button type="submit" class="w-full py-3 bg-black dark:bg-white text-white dark:text-black font-bold rounded-xl shadow hover:bg-neutral-800 dark:hover:bg-gray-200">Salvar Alterações</button><button type="button" onclick="closeModal('manage-product-modal')" class="text-neutral-500 text-xs font-bold uppercase mt-2 hover:text-black dark:hover:text-white">Cancelar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="sell-modal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 dark:bg-black/90 backdrop-blur-sm" onclick="closeModal('sell-modal')">
+        <div class="bg-white dark:bg-black w-full max-w-lg h-[90vh] sm:h-auto sm:max-h-[90vh] rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-slide-up border border-gray-200 dark:border-red-900" onclick="event.stopPropagation()">
+            <div class="bg-gray-100 dark:bg-neutral-900 p-4 text-gray-900 dark:text-white flex justify-between items-center shadow-md z-10 border-b border-gray-200 dark:border-red-900"><h3 class="font-bold text-lg flex items-center gap-2"><i class="ph ph-shopping-cart text-red-500"></i> Carrinho</h3><button onclick="closeModal('sell-modal')" class="bg-black/10 dark:bg-white/10 p-2 rounded-full hover:bg-black/20 dark:hover:bg-white/20"><i class="ph ph-x"></i></button></div>
+            <div class="flex-grow overflow-y-auto p-4 bg-white dark:bg-black">
+                
+                <div class="bg-gray-100 dark:bg-neutral-900 p-3 rounded-xl border border-gray-200 dark:border-red-900 mb-3">
+                     <label class="text-[0.65rem] uppercase font-bold text-neutral-500 dark:text-red-500 mb-1 block">Cliente (WhatsApp)</label>
+                     <div class="flex gap-2">
+                         <input type="number" id="client-whatsapp" placeholder="Ex: 5511999999999" class="input-elegant py-1 flex-grow text-sm">
+                     </div>
+                </div>
+
+                <div class="bg-gray-100 dark:bg-neutral-900 p-4 rounded-xl border border-gray-200 dark:border-red-900 mb-4 sticky top-0 z-10">
+                    <div class="flex gap-2 mb-3 items-center">
+                        <button id="btn-scan-sell" class="p-3 bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-red-500 rounded-xl border border-gray-200 dark:border-red-900 hover:bg-gray-200 dark:hover:bg-neutral-800 transition">
+                            <i class="ph ph-qr-code text-xl"></i>
+                        </button>
+                        <input type="text" id="sell-barcode-input" placeholder="EAN..." class="input-elegant flex-grow font-mono text-sm">
+                        <div class="qty-control-group w-24 ml-1">
+                            <button class="btn-qty" onclick="adjustSellInputQty(-1)">-</button>
+                            <input type="number" id="sell-quantity-input" value="1" min="1" class="bg-transparent text-center w-full h-full outline-none font-bold text-gray-900 dark:text-white" disabled>
+                            <button class="btn-qty" onclick="adjustSellInputQty(1)">+</button>
+                        </div>
+                    </div>
+
+                    <div id="scanner-area-sell" class="hidden scanner-feed-container mb-3 dark:border-red-900"><video id="sell-scanner-feed"></video><button onclick="stopScanner();document.getElementById('scanner-area-sell').classList.add('hidden')" class="absolute top-2 right-2 bg-black/50 text-white rounded-full p-2"><i class="ph ph-x"></i></button></div>
+                    
+                    <div id="sell-product-display" class="hidden animate-slide-up bg-white dark:bg-black p-3 rounded-lg border border-gray-200 dark:border-red-900 mb-2">
+                        <div class="flex gap-3"><img id="sell-product-img" class="h-16 w-16 bg-gray-100 dark:bg-neutral-900 rounded-md object-cover border border-gray-200 dark:border-red-900" src="" style="display:none"><div class="flex-grow"><p class="font-bold text-gray-900 dark:text-white text-sm leading-tight mb-1" id="sell-product-name"></p><p class="text-xs text-neutral-500 dark:text-red-400">Disp: <span id="sell-current-stock" class="font-bold"></span></p><div class="flex items-center gap-1 mt-1"><span class="text-xs text-neutral-500">R$</span><input type="number" id="sell-unit-price" class="w-24 bg-gray-100 dark:bg-neutral-900 border border-gray-300 dark:border-red-900 rounded px-1 text-sm font-semibold text-gray-900 dark:text-white" step="0.01"></div></div></div>
+                        
+                        <div class="flex flex-col gap-2 pt-3 mt-2 border-t border-gray-200 dark:border-red-900">
+                            <input type="hidden" id="sell-color-input">
+                            <input type="hidden" id="sell-size-input">
+                            <div id="selection-area-color" class="hidden"><p class="text-[0.65rem] font-bold text-neutral-500 uppercase mb-1">Cor</p><div id="container-color-options" class="flex flex-wrap gap-2"></div></div>
+                            <div id="selection-area-size" class="hidden"><p class="text-[0.65rem] font-bold text-neutral-500 uppercase mb-1">Tamanho</p><div id="container-size-options" class="flex flex-wrap gap-2"></div></div>
+                        </div>
+
+                        <button id="btn-add-to-cart" class="w-full bg-black dark:bg-white text-white dark:text-black py-3 mt-3 rounded-xl font-bold text-sm hover:bg-neutral-800 dark:hover:bg-gray-200 transition">Adicionar</button>
+                    </div>
+                </div>
+                <div class="bg-gray-100 dark:bg-neutral-900 rounded-xl border border-gray-200 dark:border-red-900 overflow-hidden"><table class="w-full text-left text-sm text-gray-700 dark:text-neutral-300"><tbody id="cart-items-list" class="divide-y divide-gray-200 dark:divide-red-900"></tbody></table></div>
+            </div>
+            <div class="bg-gray-100 dark:bg-neutral-900 p-4 border-t border-gray-200 dark:border-red-900 shadow-lg z-20"><div class="flex justify-between items-end mb-4 px-1"><span class="text-neutral-500 dark:text-red-400 text-sm">Itens: <span id="cart-total-items" class="font-bold text-gray-900 dark:text-white">0</span></span><div class="text-right"><p class="text-xs text-neutral-500 dark:text-red-500 font-bold uppercase">Total</p><p class="text-2xl font-bold text-gray-900 dark:text-white leading-none">R$ <span id="cart-total-value">0.00</span></p></div></div><button id="btn-open-preview" class="w-full py-4 bg-black dark:bg-white text-white dark:text-black font-bold text-lg rounded-xl shadow-lg hover:bg-neutral-800 dark:hover:bg-gray-200 disabled:opacity-50 disabled:bg-neutral-400 dark:disabled:bg-neutral-800 disabled:text-neutral-600 dark:disabled:text-neutral-500 transition" disabled>FINALIZAR</button></div>
+        </div>
+    </div>
+    
+    <div id="invoice-preview-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/90 backdrop-blur-sm p-4" onclick="closeModal('invoice-preview-modal')"><div class="bg-white dark:bg-black w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-slide-up border border-gray-200 dark:border-red-900" onclick="event.stopPropagation()"><div class="bg-gray-100 dark:bg-neutral-900 p-4 border-b border-gray-200 dark:border-red-900 flex justify-between items-center"><h3 class="font-bold text-gray-900 dark:text-white">Resumo</h3><span id="preview-date" class="text-xs text-neutral-500"></span></div><div class="p-4 max-h-[60vh] overflow-y-auto bg-white dark:bg-black text-gray-700 dark:text-neutral-300"><table class="w-full text-sm"><tbody id="preview-list"></tbody><tfoot><tr><td class="pt-3 font-bold text-gray-900 dark:text-white">TOTAL:</td><td class="pt-3 text-right font-bold text-gray-900 dark:text-white" id="preview-total"></td></tr></tfoot></table></div><div class="p-4 bg-gray-100 dark:bg-neutral-900 flex gap-3"><button onclick="closeModal('invoice-preview-modal')" class="flex-1 py-3 bg-transparent border border-gray-300 dark:border-red-900 text-gray-700 dark:text-white rounded-xl hover:bg-gray-200 dark:hover:bg-neutral-800">Voltar</button><button id="btn-confirm-finalize" class="flex-1 py-3 bg-black dark:bg-white text-white dark:text-black font-bold rounded-xl shadow-lg hover:bg-neutral-800 dark:hover:bg-gray-200 flex items-center justify-center gap-2"><i class="ph ph-check-circle text-lg"></i> Finalizar</button></div></div></div>
+    
+    <div id="sale-success-modal" class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-black/50 dark:bg-black/90 backdrop-blur-sm p-4" onclick="closeModal('sale-success-modal')">
+        <div class="bg-white dark:bg-black w-full max-w-sm rounded-3xl p-6 animate-slide-up border border-gray-200 dark:border-red-900 text-center" onclick="event.stopPropagation()">
+            <div class="h-20 w-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/30">
+                <i class="ph ph-check text-4xl text-green-500 font-bold"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">Sucesso!</h3>
+            <p class="text-neutral-500 text-sm mb-6">Venda registrada.</p>
+            
+            <div class="space-y-3">
+                <button id="btn-success-whatsapp" class="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-2xl shadow-lg transition flex items-center justify-center gap-2">
+                    <i class="ph ph-whatsapp-logo text-xl"></i> Enviar
+                </button>
+                <button id="btn-success-pdf" class="w-full py-3 bg-gray-100 dark:bg-neutral-900 hover:bg-gray-200 dark:hover:bg-neutral-800 text-gray-900 dark:text-white font-bold rounded-xl border border-gray-300 dark:border-red-900 transition flex items-center justify-center gap-2">
+                    <i class="ph ph-file-pdf text-xl"></i> PDF
+                </button>
+                <button onclick="closeModal('sale-success-modal')" class="w-full py-3 text-neutral-500 font-medium text-sm hover:text-black dark:hover:text-white mt-2">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="backup-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/90 backdrop-blur-sm p-4" onclick="closeModal('backup-modal')"><div class="bg-white dark:bg-black w-full max-w-md rounded-2xl p-6 animate-slide-up border border-gray-200 dark:border-red-900"><h3 class="font-bold text-lg mb-4 text-gray-900 dark:text-white">Backup</h3><button onclick="exportData()" class="w-full py-3 bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white font-bold rounded-xl mb-3 border border-gray-300 dark:border-red-900">Baixar Backup</button><div class="relative"><input type="file" class="absolute inset-0 opacity-0 w-full cursor-pointer" onchange="importData(this)"><button class="w-full py-3 bg-black dark:bg-black border border-gray-300 dark:border-red-900 text-white font-bold rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-900">Restaurar Arquivo</button></div><button onclick="closeModal('backup-modal')" class="w-full py-2 text-neutral-500 mt-2 hover:text-black dark:hover:text-white">Fechar</button></div></div>
+    
+    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 bg-neutral-800 text-white rounded-full shadow-2xl transition-all duration-300 opacity-0 translate-y-10 z-[100] text-sm font-medium border border-neutral-700 flex items-center gap-2"><i class="ph ph-info"></i> <span>Notificação</span></div>
+
+    <script>
+        const DB_NAME = 'InventoryDB_V11'; 
+        const STORE_INVENTORY = 'inventory';
+        const STORE_ORDERS = 'orders';
+        const STORE_SUPPLIERS = 'suppliers';
+        let db, codeReader, cart = [], currentProductData = null, selectedProductForOptions = null;
+        let tempSupplierProducts = []; 
+        
+        const { BrowserMultiFormatReader } = ZXing;
+        const { jsPDF } = window.jspdf;
+
+        // --- Configurações de Tema e Ícone ---
+        function loadSettings() {
+            // Tema
+            const theme = localStorage.getItem('theme');
+            if (theme === 'light') {
+                document.documentElement.classList.remove('dark');
+            } else {
+                document.documentElement.classList.add('dark'); // Padrão
+            }
+
+            // Ícone
+            const savedIcon = localStorage.getItem('userIcon');
+            if (savedIcon) {
+                const iconEl = document.getElementById('header-user-icon');
+                iconEl.className = `ph ${savedIcon} text-gray-500 dark:text-red-500 text-xl`;
+            }
+        }
+
+        window.setTheme = (mode) => {
+            if (mode === 'dark') {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+        };
+
+        window.setUserIcon = (iconName) => {
+            const iconEl = document.getElementById('header-user-icon');
+            // Mantém as classes de estilo, muda apenas o ícone
+            iconEl.className = `ph ${iconName} text-gray-500 dark:text-red-500 text-xl`;
+            localStorage.setItem('userIcon', iconName);
+            showToast('Ícone atualizado!');
+        };
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        window.calculatePrice = (prefix) => {
+            const cost = parseFloat(document.getElementById(`${prefix}-cost`).value) || 0;
+            const margin = parseFloat(document.getElementById(`${prefix}-margin`).value) || 0;
+            if(cost >= 0) {
+                const finalPrice = cost + (cost * (margin / 100));
+                document.getElementById(`${prefix}-price`).value = finalPrice.toFixed(2);
+            }
+        };
+
+        function compressImage(file) { return new Promise((resolve) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = (event) => { const img = new Image(); img.src = event.target.result; img.onload = () => { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const MAX_WIDTH = 300; const scaleSize = MAX_WIDTH / img.width; canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize; ctx.drawImage(img, 0, 0, canvas.width, canvas.height); resolve(canvas.toDataURL('image/jpeg', 0.7)); }; }; }); }
+        async function handlePhotoSelect(input, prefix) { if(input.files && input.files[0]) { const b64 = await compressImage(input.files[0]); document.getElementById(`${prefix}-photo-img`).src = b64; document.getElementById(`${prefix}-photo-preview-container`).classList.remove('hidden'); } }
+        window.removePhoto = (prefix) => { document.getElementById(`${prefix}-product-photo`).value = ''; const img = document.getElementById(`${prefix}-photo-img`); img.src = ''; img.removeAttribute('src'); document.getElementById(`${prefix}-photo-preview-container`).classList.add('hidden'); };
+        document.getElementById('new-product-photo').addEventListener('change', function() { handlePhotoSelect(this, 'new'); });
+        document.getElementById('manage-product-photo').addEventListener('change', function() { handlePhotoSelect(this, 'manage'); });
+
+        function initDB() { 
+            return new Promise((resolve) => { 
+                const req = indexedDB.open(DB_NAME, 1); 
+                req.onupgradeneeded = (e) => { 
+                    const d = e.target.result; 
+                    if (!d.objectStoreNames.contains(STORE_INVENTORY)) d.createObjectStore(STORE_INVENTORY, { keyPath: 'barcode' }); 
+                    if (!d.objectStoreNames.contains(STORE_ORDERS)) d.createObjectStore(STORE_ORDERS, { keyPath: 'id', autoIncrement: true });
+                    if (!d.objectStoreNames.contains(STORE_SUPPLIERS)) d.createObjectStore(STORE_SUPPLIERS, { keyPath: 'id', autoIncrement: true });
+                }; 
+                req.onsuccess = (e) => { db = e.target.result; resolve(); }; 
+                req.onerror = () => alert("Erro BD"); 
+            }); 
+        }
+
+        const getInventory = () => new Promise(r => db.transaction(STORE_INVENTORY).objectStore(STORE_INVENTORY).getAll().onsuccess = e => r(e.target.result));
+        const getProduct = (code) => new Promise(r => db.transaction(STORE_INVENTORY).objectStore(STORE_INVENTORY).get(code).onsuccess = e => r(e.target.result));
+        const saveProduct = (p) => new Promise(r => { const tx = db.transaction(STORE_INVENTORY, 'readwrite'); tx.objectStore(STORE_INVENTORY).put(p); tx.oncomplete = r; });
+        const deleteProduct = (code) => new Promise(r => { const tx = db.transaction(STORE_INVENTORY, 'readwrite'); tx.objectStore(STORE_INVENTORY).delete(code); tx.oncomplete = r; });
+        const saveOrder = (o) => new Promise(r => { const tx = db.transaction(STORE_ORDERS, 'readwrite'); tx.objectStore(STORE_ORDERS).add(o).onsuccess = e => r(e.target.result); });
+        const getOrders = () => new Promise(r => db.transaction(STORE_ORDERS).objectStore(STORE_ORDERS).getAll().onsuccess = e => r(e.target.result));
+        const getSuppliers = () => new Promise(r => db.transaction(STORE_SUPPLIERS).objectStore(STORE_SUPPLIERS).getAll().onsuccess = e => r(e.target.result));
+        const saveSupplier = (s) => new Promise(r => { const tx = db.transaction(STORE_SUPPLIERS, 'readwrite'); tx.objectStore(STORE_SUPPLIERS).put(s); tx.oncomplete = r; });
+        const deleteSupplier = (id) => new Promise(r => { const tx = db.transaction(STORE_SUPPLIERS, 'readwrite'); tx.objectStore(STORE_SUPPLIERS).delete(id); tx.oncomplete = r; });
+        
+        function showToast(msg, type='info') { 
+            const t = document.getElementById('toast'); 
+            t.innerHTML = `<i class="ph ph-${type === 'error' ? 'warning-circle' : (type==='success' ? 'check-circle' : 'info')} text-lg"></i> <span>${msg}</span>`;
+            t.className = `fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl transition-all duration-300 z-[100] text-sm font-medium border flex items-center gap-2 ${type==='error'?'bg-red-900 border-red-700 text-red-100':(type==='success'?'bg-emerald-900 border-emerald-700 text-emerald-100':'bg-neutral-800 border-neutral-600 text-white')}`; 
+            t.classList.remove('opacity-0', 'translate-y-10'); 
+            setTimeout(() => t.classList.add('translate-y-10', 'opacity-0'), 3000); 
+        }
+        window.openModal = (id) => { document.getElementById(id).classList.remove('hidden'); if(id==='sell-modal') renderCart(); };
+        window.closeModal = (id) => { document.getElementById(id).classList.add('hidden'); stopScanner(); document.querySelectorAll('.scanner-feed-container').forEach(el => el.classList.add('hidden')); if(id === 'add-product-modal') { document.getElementById('add-product-form').reset(); removePhoto('new'); } };
+        function stopScanner() { if (codeReader) { codeReader.reset(); codeReader = null; } }
+        function startScanner(videoEl, cb, container) { stopScanner(); container.classList.remove('hidden'); codeReader = new BrowserMultiFormatReader(); codeReader.decodeFromVideoDevice(undefined, videoEl, (res) => { if(res) { stopScanner(); container.classList.add('hidden'); cb(res.text); showToast('Lido!', 'success'); } }).catch(() => container.innerHTML = '<p class="text-white text-center p-4">Erro Câmera</p>'); }
+
+        window.prepareProductOptions = async (code) => { const p = await getProduct(code); if(p) openProductOptions(p); };
+
+        async function renderCatalog(filter='', listId = 'product-catalog-list', clickAction = 'sell') {
+            const list = document.getElementById(listId); list.innerHTML = '';
+            const all = await getInventory();
+            const items = all.filter(i => i.name.toLowerCase().includes(filter.toLowerCase()) || i.barcode.includes(filter));
+            if(listId === 'product-catalog-list') document.getElementById('catalog-count').textContent = items.length;
+            
+            items.forEach(p => {
+                const imgHTML = p.photo ? `<img src="${p.photo}" class="product-thumb">` : `<div class="product-thumb flex items-center justify-center text-neutral-600 text-2xl font-bold bg-gray-100 dark:bg-neutral-900 border border-gray-200 dark:border-red-900"><i class="ph ph-image dark:text-red-500"></i></div>`;
+                const listEl = document.createElement('div');
+                listEl.className = 'bg-white dark:bg-black p-3 rounded-xl shadow-sm border border-gray-200 dark:border-red-900 flex items-center gap-3 active:bg-gray-100 dark:active:bg-neutral-900 transition';
+                
+                let actionBtnHTML = '';
+                if(clickAction === 'sell') {
+                    listEl.onclick = (e) => { if(!e.target.closest('.btn-cart-action')) selectForSell(p.barcode); }; 
+                    actionBtnHTML = `<button class="btn-cart-action shadow-sm" onclick="selectForSell('${p.barcode}')"><i class="ph ph-plus text-lg"></i></button>`;
+                } else if(clickAction === 'manage') {
+                    listEl.onclick = () => prepareProductOptions(p.barcode);
+                }
+
+                listEl.innerHTML = `${imgHTML}<div class="flex-grow overflow-hidden"><p class="font-bold text-gray-900 dark:text-neutral-200 truncate text-sm">${p.name}</p><p class="text-xs text-neutral-500 font-mono flex items-center gap-1"><i class="ph ph-barcode"></i> ${p.barcode}</p><div class="flex gap-2 mt-1"><span class="text-[0.65rem] px-2 rounded ${p.stock<=p.minStock?'bg-red-50 dark:bg-red-900/40 text-red-500 dark:text-red-400 border border-red-200 dark:border-red-900':'bg-gray-100 dark:bg-neutral-800 text-neutral-500 dark:text-red-400 border border-gray-200 dark:border-red-900'} font-bold flex items-center gap-1"><i class="ph ph-stack"></i> ${p.stock}</span><span class="text-[0.65rem] bg-gray-50 dark:bg-neutral-900 text-gray-700 dark:text-neutral-300 border border-gray-200 dark:border-red-900 px-2 rounded font-bold">R$ ${p.unitPrice.toFixed(2)}</span></div></div>${actionBtnHTML}`;
+                list.appendChild(listEl);
+            });
+
+            if(listId === 'product-catalog-list') {
+                const low = all.filter(i => i.stock <= i.minStock);
+                document.getElementById('low-stock-count').textContent = low.length;
+                const lowList = document.getElementById('low-stock-list'); lowList.innerHTML = '';
+                if(low.length>0) { document.getElementById('section-low-stock').classList.remove('hidden'); low.forEach(p => lowList.innerHTML += `<div class="bg-red-50 dark:bg-red-900/20 p-2 rounded text-xs flex justify-between items-center cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-100 dark:border-red-900/50" onclick="prepareProductOptions('${p.barcode}')"><span class="text-red-500 dark:text-red-400 font-semibold">${p.name}</span><span class="text-red-600 dark:text-red-500 font-bold">${p.stock} un</span></div>`); } else document.getElementById('section-low-stock').classList.add('hidden');
+            }
+        }
+
+        function openProductOptions(p) {
+            selectedProductForOptions = p;
+            document.getElementById('opt-product-name').textContent = p.name;
+            document.getElementById('opt-product-code').textContent = p.barcode;
+            document.getElementById('opt-product-stock').textContent = p.stock + ' unidades';
+            document.getElementById('opt-product-img').src = p.photo || '';
+            openModal('product-options-modal');
+        }
+
+        document.getElementById('btn-opt-restock').onclick = () => { closeModal('product-options-modal'); document.getElementById('quick-restock-qty').value = ''; openModal('restock-input-modal'); setTimeout(() => document.getElementById('quick-restock-qty').focus(), 100); };
+        document.getElementById('btn-confirm-quick-restock').onclick = async () => { const qty = parseInt(document.getElementById('quick-restock-qty').value); if(selectedProductForOptions && !isNaN(qty)) { selectedProductForOptions.stock += qty; await saveProduct(selectedProductForOptions); closeModal('restock-input-modal'); showToast('Estoque Adicionado!', 'success'); refreshAllLists(); } };
+        document.getElementById('btn-opt-edit').onclick = () => { closeModal('product-options-modal'); editProduct(selectedProductForOptions.barcode); };
+        document.getElementById('btn-opt-delete').onclick = async () => { if(confirm(`Excluir ${selectedProductForOptions.name}?`)) { await deleteProduct(selectedProductForOptions.barcode); closeModal('product-options-modal'); showToast('Produto excluído'); refreshAllLists(); } };
+
+        function generateOptions(dataString, containerId, inputId) {
+            const container = document.getElementById(containerId); const input = document.getElementById(inputId);
+            container.innerHTML = ''; input.value = '';
+            if (!dataString) return false;
+            const options = dataString.split(',').map(s => s.trim()).filter(s => s !== '');
+            if (options.length === 0) return false;
+            options.forEach((opt, index) => {
+                const btn = document.createElement('div'); btn.className = 'option-chip'; btn.textContent = opt;
+                btn.onclick = () => { container.querySelectorAll('.option-chip').forEach(c => c.classList.remove('selected')); btn.classList.add('selected'); input.value = opt; };
+                if (index === 0) { btn.classList.add('selected'); input.value = opt; }
+                container.appendChild(btn);
+            });
+            return true;
+        }
+
+        async function selectForSell(code) {
+            const p = await getProduct(code);
+            if(!p) return showToast('Não encontrado', 'error');
+            currentProductData = p;
+            
+            document.getElementById('sell-barcode-input').value = p.barcode;
+            document.getElementById('sell-product-name').textContent = p.name;
+            document.getElementById('sell-current-stock').textContent = p.stock;
+            document.getElementById('sell-unit-price').value = p.unitPrice.toFixed(2);
+            document.getElementById('sell-quantity-input').value = 1;
+            
+            const hasColors = generateOptions(p.color, 'container-color-options', 'sell-color-input');
+            const hasSizes = generateOptions(p.size, 'container-size-options', 'sell-size-input');
+            
+            if(hasColors) document.getElementById('selection-area-color').classList.remove('hidden'); else document.getElementById('selection-area-color').classList.add('hidden');
+            if(hasSizes) document.getElementById('selection-area-size').classList.remove('hidden'); else document.getElementById('selection-area-size').classList.add('hidden');
+
+            document.getElementById('sell-quantity-input').disabled = false;
+            document.getElementById('sell-product-display').classList.remove('hidden');
+            const imgEl = document.getElementById('sell-product-img');
+            if(p.photo) { imgEl.src = p.photo; imgEl.style.display = 'block'; } else { imgEl.style.display = 'none'; }
+            openModal('sell-modal');
+        }
+
+        window.adjustSellInputQty = (delta) => {
+            if(!currentProductData) return;
+            const input = document.getElementById('sell-quantity-input');
+            let val = parseInt(input.value) || 0;
+            const newVal = val + delta;
+            if(newVal >= 1) {
+                if(newVal > currentProductData.stock) {
+                    showToast('Estoque máximo atingido', 'error');
+                } else {
+                    input.value = newVal;
+                }
+            }
+        };
+
+        window.updateCartQty = async (index, delta) => {
+            const item = cart[index];
+            const p = await getProduct(item.barcode);
+            const newQty = item.quantity + delta;
+            if (newQty < 1) return; 
+            if (newQty > p.stock) return showToast('Estoque insuficiente!', 'error');
+            item.quantity = newQty;
+            item.total = item.quantity * item.unitPrice;
+            renderCart();
+        };
+        
+        function renderCart() {
+            const list = document.getElementById('cart-items-list');
+            const totalValEl = document.getElementById('cart-total-value');
+            const totalItemsEl = document.getElementById('cart-total-items');
+            const btnFinalize = document.getElementById('btn-open-preview');
+
+            list.innerHTML = '';
+            let total = 0;
+            let count = 0;
+
+            cart.forEach((item, index) => {
+                total += item.total;
+                count += item.quantity;
+
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-200 dark:border-red-900 last:border-0 hover:bg-gray-50 dark:hover:bg-neutral-900 transition';
+                tr.innerHTML = `
+                    <td class="p-3">
+                        <div class="font-bold text-gray-900 dark:text-white text-sm">${item.name}</div>
+                        <div class="text-[0.65rem] text-neutral-500 dark:text-red-300 uppercase font-mono tracking-wide">${item.color || '-'} / ${item.size || '-'}</div>
+                    </td>
+                    <td class="p-3">
+                        <div class="qty-control-sm shadow-sm">
+                            <button class="btn-qty" onclick="updateCartQty(${index}, -1)">-</button>
+                            <div class="qty-display">${item.quantity}</div>
+                            <button class="btn-qty" onclick="updateCartQty(${index}, 1)">+</button>
+                        </div>
+                    </td>
+                    <td class="p-3 text-right">
+                        <div class="font-bold text-gray-900 dark:text-white text-sm">R$ ${item.total.toFixed(2)}</div>
+                        <button onclick="removeFromCart(${index})" class="text-[0.65rem] text-red-500 mt-2 hover:text-red-400 font-bold uppercase flex items-center justify-end gap-1 ml-auto"><i class="ph ph-trash"></i> Remover</button>
+                    </td>
+                `;
+                list.appendChild(tr);
+            });
+
+            totalValEl.textContent = total.toFixed(2);
+            totalItemsEl.textContent = count;
+
+            if (cart.length > 0) {
+                btnFinalize.disabled = false;
+                btnFinalize.onclick = () => {
+                    const previewList = document.getElementById('preview-list');
+                    previewList.innerHTML = '';
+                    cart.forEach(c => {
+                        previewList.innerHTML += `
+                            <tr class="border-b border-gray-200 dark:border-red-900 last:border-0">
+                                <td class="py-2">
+                                    <span class="block text-gray-900 dark:text-white font-bold text-sm">${c.name}</span>
+                                    <span class="text-xs text-neutral-500">${c.quantity}x R$ ${c.unitPrice.toFixed(2)} <span class="opacity-50">(${c.color||'-'}/${c.size||'-'})</span></span>
+                                </td>
+                                <td class="py-2 text-right text-gray-700 dark:text-neutral-300 font-bold">R$ ${c.total.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    });
+                    document.getElementById('preview-total').textContent = `R$ ${total.toFixed(2)}`;
+                    const dateOpts = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit' };
+                    document.getElementById('preview-date').textContent = new Date().toLocaleString('pt-BR', dateOpts);
+                    openModal('invoice-preview-modal');
+                };
+            } else {
+                btnFinalize.disabled = true;
+                btnFinalize.onclick = null;
+            }
+        }
+
+        window.removeFromCart = (index) => {
+            cart.splice(index, 1);
+            renderCart();
+            showToast('Item removido');
+        };
+
+        async function editProduct(code) {
+            const p = await getProduct(code);
+            document.getElementById('manage-barcode').value = p.barcode;
+            document.getElementById('manage-name').value = p.name;
+            document.getElementById('manage-stock').value = p.stock;
+            document.getElementById('manage-min-stock').value = p.minStock;
+            document.getElementById('manage-price').value = p.unitPrice.toFixed(2);
+            document.getElementById('manage-color').value = p.color || '';
+            document.getElementById('manage-size').value = p.size || '';
+            document.getElementById('manage-cost').value = p.costPrice || '';
+            document.getElementById('manage-margin').value = p.profitMargin || '';
+            if(p.photo) { document.getElementById('manage-photo-img').src = p.photo; document.getElementById('manage-photo-preview-container').classList.remove('hidden'); } else { removePhoto('manage'); }
+            openModal('manage-product-modal');
+            document.getElementById('manage-product-form').onsubmit = async (e) => {
+                e.preventDefault();
+                const fileInput = document.getElementById('manage-product-photo');
+                const imgPreview = document.getElementById('manage-photo-img');
+                let photoData = null;
+                if (fileInput.files[0]) { photoData = await compressImage(fileInput.files[0]); } else if (imgPreview.src && imgPreview.src.length > 100) { photoData = p.photo; }
+                await saveProduct({ ...p, name: document.getElementById('manage-name').value, stock: parseInt(document.getElementById('manage-stock').value), minStock: parseInt(document.getElementById('manage-min-stock').value), unitPrice: parseFloat(document.getElementById('manage-price').value), color: document.getElementById('manage-color').value, size: document.getElementById('manage-size').value, costPrice: parseFloat(document.getElementById('manage-cost').value) || 0, profitMargin: parseFloat(document.getElementById('manage-margin').value) || 0, photo: photoData });
+                closeModal('manage-product-modal'); showToast('Atualizado!'); refreshAllLists();
+            };
+        }
+
+        document.getElementById('add-product-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const code = document.getElementById('new-barcode').value;
+            if(await getProduct(code)) return showToast('Código já existe!', 'error');
+            const fileInput = document.getElementById('new-product-photo');
+            let photoData = null; if(fileInput.files[0]) photoData = await compressImage(fileInput.files[0]);
+            await saveProduct({ barcode: code, name: document.getElementById('new-name').value, stock: parseInt(document.getElementById('new-stock').value), minStock: parseInt(document.getElementById('new-min-stock').value), unitPrice: parseFloat(document.getElementById('new-price').value), color: document.getElementById('new-color').value, size: document.getElementById('new-size').value, costPrice: parseFloat(document.getElementById('new-cost').value) || 0, profitMargin: parseFloat(document.getElementById('new-margin').value) || 0, photo: photoData });
+            closeModal('add-product-modal'); showToast('Criado!', 'success'); refreshAllLists();
+        };
+
+        // --- Supplier Logic ---
+        async function renderSupplierList(filter='', onlyFavorites=false) {
+            const container = document.getElementById('suppliers-list-container');
+            const title = document.getElementById('suppliers-modal-title');
+            
+            title.textContent = onlyFavorites ? 'Favoritos' : 'Fornecedores';
+            container.innerHTML = '';
+            
+            const all = await getSuppliers();
+            let items = all.filter(s => s.name.toLowerCase().includes(filter.toLowerCase()));
+            
+            if(onlyFavorites) items = items.filter(s => s.isFavorite);
+            
+            if(items.length === 0) {
+                container.innerHTML = '<p class="text-center text-neutral-500 py-4 flex flex-col items-center gap-2">Nenhum fornecedor encontrado.</p>';
+                return;
+            }
+
+            items.forEach(s => {
+                const el = document.createElement('div');
+                const starClass = s.isFavorite ? 'ph-fill text-yellow-500' : 'text-neutral-500';
+                const waLink = s.whatsapp ? `https://wa.me/${s.whatsapp.replace(/\D/g,'')}` : '#';
+                
+                el.className = 'bg-white dark:bg-neutral-900 p-4 rounded-xl border border-gray-200 dark:border-red-900 flex flex-col gap-2 shadow-sm';
+                el.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-gray-900 dark:text-white text-lg">${s.name}</h4>
+                            ${s.whatsapp ? `<a href="${waLink}" target="_blank" class="text-xs text-green-500 font-bold hover:underline flex items-center gap-1"><i class="ph ph-whatsapp-logo"></i> ${s.whatsapp}</a>` : '<p class="text-xs text-neutral-500">Sem contato</p>'}
+                        </div>
+                        <div class="flex gap-2 items-center">
+                             <button onclick="toggleSupplierFavorite(${s.id})" class="text-xl p-2 hover:scale-110 transition"><i class="ph ph-star ${starClass}"></i></button>
+                             <button onclick="editSupplier(${s.id})" class="text-neutral-400 p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded"><i class="ph ph-pencil-simple"></i></button>
+                             <button onclick="removeSupplier(${s.id})" class="text-red-500 p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded"><i class="ph ph-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="text-xs text-neutral-500 bg-gray-50 dark:bg-black p-2 rounded border border-gray-200 dark:border-red-900">
+                        <strong class="text-neutral-600 dark:text-red-400">Catálogo:</strong> ${s.catalog ? s.catalog.length : 0} itens
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        window.toggleSupplierFavorite = async (id) => {
+            const all = await getSuppliers();
+            const s = all.find(x => x.id === id);
+            if(s) {
+                s.isFavorite = !s.isFavorite;
+                await saveSupplier(s);
+                const isFavView = document.getElementById('suppliers-modal-title').textContent.includes('Favoritos');
+                renderSupplierList(document.getElementById('supplier-search-input').value, isFavView);
+                showToast(s.isFavorite ? 'Favoritado!' : 'Removido dos Favoritos');
+            }
+        }
+
+        window.openSupplierEditModal = () => {
+            document.getElementById('supplier-id').value = '';
+            document.getElementById('supplier-name').value = '';
+            document.getElementById('supplier-whatsapp').value = '';
+            tempSupplierProducts = [];
+            renderTempSupplierProducts();
+            document.getElementById('supplier-modal-title-edit').textContent = 'Novo Fornecedor';
+            openModal('manage-supplier-modal');
+        };
+
+        window.addTempSupplierProduct = () => {
+            const name = document.getElementById('supp-prod-name').value.trim();
+            const price = parseFloat(document.getElementById('supp-prod-price').value);
+
+            if(name && !isNaN(price)) {
+                tempSupplierProducts.push({ name, price });
+                document.getElementById('supp-prod-name').value = '';
+                document.getElementById('supp-prod-price').value = '';
+                document.getElementById('supp-prod-name').focus();
+                renderTempSupplierProducts();
+            } else {
+                showToast('Preencha nome e preço!', 'error');
+            }
+        };
+
+        function renderTempSupplierProducts() {
+            const container = document.getElementById('supplier-products-list');
+            container.innerHTML = '';
+            if(tempSupplierProducts.length === 0) {
+                container.innerHTML = '<p class="text-xs text-neutral-500 text-center py-2">Nenhum produto adicionado.</p>';
+                return;
+            }
+            tempSupplierProducts.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center text-sm p-2 bg-gray-100 dark:bg-neutral-900 rounded border border-gray-200 dark:border-red-900 text-gray-700 dark:text-gray-300';
+                div.innerHTML = `<span>${item.name}</span> <div class="flex gap-3"> <span class="text-gray-900 dark:text-white font-bold">R$ ${item.price.toFixed(2)}</span> <button onclick="tempSupplierProducts.splice(${index},1); renderTempSupplierProducts()" class="text-red-500 font-bold hover:text-red-400"><i class="ph ph-x"></i></button> </div>`;
+                container.appendChild(div);
+            });
+        }
+
+        window.editSupplier = async (id) => {
+            const all = await getSuppliers();
+            const s = all.find(x => x.id === id);
+            if(s) {
+                document.getElementById('supplier-id').value = s.id;
+                document.getElementById('supplier-name').value = s.name;
+                document.getElementById('supplier-whatsapp').value = s.whatsapp || '';
+                if(Array.isArray(s.catalog)) tempSupplierProducts = [...s.catalog]; else tempSupplierProducts = [];
+                renderTempSupplierProducts();
+                document.getElementById('supplier-modal-title-edit').textContent = 'Editar Fornecedor';
+                openModal('manage-supplier-modal');
+            }
+        };
+
+        window.removeSupplier = async (id) => {
+            if(confirm('Excluir este fornecedor?')) {
+                await deleteSupplier(id);
+                showToast('Removido!');
+                renderSupplierList(document.getElementById('supplier-search-input').value);
+            }
+        };
+
+        window.submitSupplierForm = async () => {
+            const id = document.getElementById('supplier-id').value;
+            const name = document.getElementById('supplier-name').value;
+            if(!name) return showToast('Nome é obrigatório', 'error');
+
+            let isFavorite = false;
+            if(id) {
+                const all = await getSuppliers();
+                const existing = all.find(x => x.id == id);
+                if(existing) isFavorite = existing.isFavorite;
+            }
+
+            const supplierData = { name: name, whatsapp: document.getElementById('supplier-whatsapp').value, catalog: tempSupplierProducts, isFavorite: isFavorite };
+            if(id) supplierData.id = parseInt(id);
+            await saveSupplier(supplierData);
+            closeModal('manage-supplier-modal');
+            showToast('Salvo!', 'success');
+            renderSupplierList(document.getElementById('supplier-search-input').value);
+        };
+        
+        document.getElementById('supplier-search-input').addEventListener('input', (e) => renderSupplierList(e.target.value));
+
+        // --- Comparison Logic ---
+        async function comparePrices(term) {
+            const container = document.getElementById('comparison-results-list');
+            container.innerHTML = '';
+            
+            if(term.length < 2) {
+                 container.innerHTML = '<p class="text-center text-neutral-500 mt-4 flex flex-col items-center gap-2">Digite para buscar...</p>';
+                 return;
+            }
+
+            const suppliers = await getSuppliers();
+            let matches = [];
+
+            suppliers.forEach(supp => {
+                if(supp.catalog && Array.isArray(supp.catalog)) {
+                    supp.catalog.forEach(item => {
+                        if(item.name.toLowerCase().includes(term.toLowerCase())) {
+                            matches.push({ supplierName: supp.name, supplierWa: supp.whatsapp, productName: item.name, price: item.price });
+                        }
+                    });
+                }
+            });
+
+            matches.sort((a,b) => a.price - b.price);
+
+            if(matches.length === 0) {
+                container.innerHTML = '<p class="text-center text-neutral-500 mt-4">Nenhum produto encontrado.</p>';
+                return;
+            }
+
+            matches.forEach((m, index) => {
+                const isCheapest = index === 0;
+                const badge = isCheapest ? '<span class="bg-green-600 text-white text-[0.6rem] px-2 py-0.5 rounded ml-2 font-bold shadow-sm">MELHOR PREÇO</span>' : '';
+                const waLink = m.supplierWa ? `https://wa.me/${m.supplierWa.replace(/\D/g,'')}?text=Olá, vi o preço de ${m.productName} por R$ ${m.price.toFixed(2)}` : '#';
+                
+                const el = document.createElement('div');
+                el.className = `p-3 rounded-xl border flex justify-between items-center shadow-sm ${isCheapest ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800' : 'bg-white dark:bg-neutral-900 border-gray-200 dark:border-red-900'}`;
+                el.innerHTML = `
+                    <div>
+                        <div class="flex items-center"><span class="font-bold text-gray-900 dark:text-neutral-200">${m.productName}</span> ${badge}</div>
+                        <div class="text-xs text-neutral-500">${m.supplierName}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-lg text-gray-900 dark:text-white">R$ ${m.price.toFixed(2)}</div>
+                        ${m.supplierWa ? `<a href="${waLink}" target="_blank" class="text-xs text-green-500 font-bold hover:underline flex items-center justify-end gap-1"><i class="ph ph-whatsapp-logo"></i> Pedir</a>` : ''}
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+        }
+        document.getElementById('comparison-search-input').addEventListener('input', (e) => comparePrices(e.target.value));
+
+        // --- Sales & Dashboard Logic ---
+        async function renderSalesHistory() {
+            const container = document.getElementById('sales-history-list');
+            container.innerHTML = '<div class="text-center py-4"><i class="ph ph-spinner animate-spin text-2xl text-neutral-500"></i></div>';
+            
+            const orders = await getOrders();
+            orders.reverse(); // Newest first
+            
+            // Calculate Dashboard Totals
+            const now = new Date();
+            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            
+            const startOfWeek = new Date(now);
+            startOfWeek.setDate(now.getDate() - now.getDay());
+            startOfWeek.setHours(0,0,0,0);
+
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+            let totalDay = 0, totalWeek = 0, totalMonth = 0;
+
+            orders.forEach(o => {
+                const oDate = new Date(o.date);
+                if (oDate >= startOfDay) totalDay += o.total;
+                if (oDate >= startOfWeek) totalWeek += o.total;
+                if (oDate >= startOfMonth) totalMonth += o.total;
+            });
+
+            document.getElementById('dash-today').textContent = `R$ ${totalDay.toFixed(2)}`;
+            document.getElementById('dash-week').textContent = `R$ ${totalWeek.toFixed(2)}`;
+            document.getElementById('dash-month').textContent = `R$ ${totalMonth.toFixed(2)}`;
+            
+            container.innerHTML = '';
+            if(orders.length === 0) {
+                container.innerHTML = '<p class="text-center text-neutral-500 mt-4">Nenhuma venda registrada.</p>';
+                return;
+            }
+
+            orders.forEach(o => {
+                const date = new Date(o.date).toLocaleString();
+                const el = document.createElement('div');
+                el.className = 'bg-white dark:bg-neutral-900 p-4 rounded-xl border border-gray-200 dark:border-red-900 flex justify-between items-center shadow-sm';
+                el.innerHTML = `
+                    <div>
+                        <div class="font-bold text-gray-900 dark:text-neutral-200">Pedido #${o.id}</div>
+                        <div class="text-xs text-neutral-500">${date}</div>
+                        ${o.clientWa ? `<div class="text-[0.65rem] text-neutral-400 mt-1"><i class="ph ph-user"></i> Cliente: ${o.clientWa}</div>` : ''}
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-gray-900 dark:text-white mb-2">R$ ${o.total.toFixed(2)}</div>
+                        <div class="flex gap-2 justify-end">
+                            <button class="bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 text-gray-900 dark:text-white p-2 rounded-lg text-xs font-bold transition" onclick='generateAndDownloadPDF(${JSON.stringify(o)})' title="Baixar PDF"><i class="ph ph-file-pdf text-lg"></i></button>
+                            <button class="bg-green-600 dark:bg-green-700 hover:bg-green-500 dark:hover:bg-green-600 text-white p-2 rounded-lg text-xs font-bold transition" onclick="shareOrder(${o.id}, ${o.total}, '${o.clientWa || ''}')" title="Compartilhar"><i class="ph ph-whatsapp-logo text-lg"></i></button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        document.getElementById('btn-add-to-cart').onclick = () => {
+            if(!currentProductData) return;
+            const qInput = document.getElementById('sell-quantity-input');
+            const priceInput = document.getElementById('sell-unit-price');
+            
+            const q = parseInt(qInput.value) || 1;
+            const price = parseFloat(priceInput.value) || 0;
+            const color = document.getElementById('sell-color-input').value;
+            const size = document.getElementById('sell-size-input').value;
+            
+            if (currentProductData.stock < q) return showToast('Estoque insuficiente', 'error');
+
+            const cartItem = cart.find(c => c.barcode === currentProductData.barcode && c.color === color && c.size === size);
+            
+            if(cartItem) { 
+                if(cartItem.quantity + q > currentProductData.stock) return showToast('Estoque insuficiente', 'error');
+                cartItem.quantity += q; 
+                cartItem.total = cartItem.quantity * price; 
+            } else { 
+                cart.push({ barcode: currentProductData.barcode, name: currentProductData.name, quantity: q, unitPrice: price, total: q*price, color: color, size: size }); 
+            }
+            
+            renderCart(); 
+            document.getElementById('sell-product-display').classList.add('hidden'); 
+            document.getElementById('sell-barcode-input').value = ''; 
+            showToast('Adicionado!');
+        };
+
+        document.getElementById('btn-confirm-finalize').onclick = async () => { 
+            const clientWa = document.getElementById('client-whatsapp').value;
+            for(const item of cart) { 
+                const p = await getProduct(item.barcode); 
+                p.stock -= item.quantity; 
+                await saveProduct(p); 
+            } 
+            const totalVal = parseFloat(document.getElementById('cart-total-value').textContent);
+            const orderObj = { items: cart, total: totalVal, date: new Date(), clientWa: clientWa };
+            const id = await saveOrder(orderObj); 
+            orderObj.id = id; 
+            cart = []; 
+            document.getElementById('client-whatsapp').value = '';
+            closeModal('invoice-preview-modal'); 
+            closeModal('sell-modal'); 
+            refreshAllLists(); 
+            showToast('Venda Finalizada!', 'success');
+            openSuccessModal(orderObj);
+        };
+
+        function openSuccessModal(order) {
+            const modal = document.getElementById('sale-success-modal');
+            const btnWa = document.getElementById('btn-success-whatsapp');
+            const btnPdf = document.getElementById('btn-success-pdf');
+            btnPdf.onclick = () => generateAndDownloadPDF(order);
+            btnWa.onclick = () => shareOrder(order.id, order.total, order.clientWa);
+            modal.classList.remove('hidden');
+        }
+
+        function generateAndDownloadPDF(order) {
+            const doc = new jsPDF();
+            doc.setFontSize(18);
+            doc.text(`Recibo #${order.id}`, 10, 15);
+            doc.setFontSize(10);
+            doc.text(`Data: ${new Date(order.date).toLocaleString()}`, 10, 22);
+            if(order.clientWa) doc.text(`Cliente: ${order.clientWa}`, 10, 27);
+            
+            let y = 35;
+            doc.line(10, 30, 200, 30);
+            
+            order.items.forEach(c => { 
+                const itemLine = `${c.quantity}x ${c.name}`;
+                const detailLine = `(${c.color||'-'} / ${c.size||'-'})`;
+                const priceLine = `R$ ${c.total.toFixed(2)}`;
+                doc.text(itemLine, 10, y);
+                doc.setFontSize(8);
+                doc.text(detailLine, 10, y+4);
+                doc.setFontSize(10);
+                doc.text(priceLine, 170, y);
+                y+=8; 
+            }); 
+            
+            doc.line(10, y, 200, y);
+            y+=10;
+            doc.setFontSize(14);
+            doc.text(`Total: R$ ${order.total.toFixed(2)}`, 10, y);
+            
+            doc.save(`Venda_${order.id}.pdf`);
+        }
+
+        function shareOrder(orderId, total, targetNumber) {
+             const text = `🧾 *Recibo de Pedido #${orderId}*\nValor Total: R$ ${total.toFixed(2)}\n\nObrigado pela preferência!`;
+             let url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+             if(targetNumber) {
+                 url = `https://wa.me/${targetNumber.replace(/\D/g,'')}?text=${encodeURIComponent(text)}`;
+             }
+             window.open(url, '_blank');
+        }
+
+        window.exportData = async () => { 
+            const products = await getInventory(); 
+            const suppliers = await getSuppliers();
+            const orders = await getOrders();
+            const data = { products, suppliers, orders };
+            const a = document.createElement('a'); 
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type:'application/json'})); 
+            a.download = 'backup_vendaspro.json'; 
+            a.click(); 
+        };
+        
+        window.importData = (input) => { 
+            const r = new FileReader(); 
+            r.onload = async (e) => { 
+                const data = JSON.parse(e.target.result);
+                if(Array.isArray(data)) { data.forEach(async p => await saveProduct(p)); } 
+                else {
+                    if(data.products) data.products.forEach(async p => await saveProduct(p));
+                    if(data.suppliers) data.suppliers.forEach(async s => await saveSupplier(s));
+                    if(data.orders) data.orders.forEach(async o => await saveOrder(o));
+                }
+                closeModal('backup-modal'); refreshAllLists(); showToast('Restaurado!', 'success'); 
+            }; 
+            r.readAsText(input.files[0]); 
+        };
+
+        function refreshAllLists() {
+            renderCatalog('', 'product-catalog-list', 'sell');
+            renderCatalog('', 'stock-management-list', 'manage');
+        }
+
+        window.onload = async () => {
+            loadSettings(); // Carrega tema e ícone
+            await initDB();
+            if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js');
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            refreshAllLists();
+            
+            document.getElementById('btn-open-sell-modal').onclick = () => openModal('sell-modal');
+            document.getElementById('btn-open-stock-list').onclick = () => { openModal('stock-list-modal'); renderCatalog('', 'stock-management-list', 'manage'); };
+            document.getElementById('btn-add-product').onclick = () => openModal('add-product-modal');
+            
+            document.getElementById('btn-scan-catalog').onclick = () => startScanner(document.getElementById('catalog-scanner-feed'), (t)=>{ document.getElementById('catalog-search-input').value=t; renderCatalog(t, 'product-catalog-list', 'sell'); }, document.getElementById('scanner-area-catalog'));
+            document.getElementById('btn-open-scanner-new-product').onclick = () => startScanner(document.getElementById('new-product-scanner-feed'), (t)=>{ document.getElementById('new-barcode').value=t; }, document.getElementById('scanner-area-new-product'));
+            
+            // Lógica do Scanner de Venda Nova
+            document.getElementById('btn-scan-sell').onclick = () => startScanner(document.getElementById('sell-scanner-feed'), (t)=>{ document.getElementById('sell-barcode-input').value=t; selectForSell(t); }, document.getElementById('scanner-area-sell'));
+
+            document.getElementById('catalog-search-input').addEventListener('input', (e) => renderCatalog(e.target.value, 'product-catalog-list', 'sell'));
+            document.getElementById('stock-search-input').addEventListener('input', (e) => renderCatalog(e.target.value, 'stock-management-list', 'manage'));
+            document.getElementById('sell-barcode-input').addEventListener('input', (e) => { clearTimeout(e.target.t); e.target.t=setTimeout(()=>selectForSell(e.target.value), 500); });
+        };
+    </script>
+</body>
+</html>
